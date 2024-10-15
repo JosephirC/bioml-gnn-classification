@@ -7,6 +7,8 @@ from torch.nn import Linear
 import torch.nn.functional as F
 from torch.nn import MaxPool1d
 from torch.utils.tensorboard import SummaryWriter 
+from sklearn.metrics import precision_score
+from sklearn.metrics import root_mean_squared_error
 
 
 class GCN_no_pooling(torch.nn.Module):
@@ -51,3 +53,21 @@ class GCN_no_pooling(torch.nn.Module):
         writer.close()
 
         return self
+    
+    def test_model(self, test_data):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = self.cpu()
+        test_data= test_data.cpu()
+
+        pred = self.forward(test_data.x, test_data.edge_index).argmax(dim=1)
+        correct = (pred[test_data.test_mask] == test_data.y[test_data.test_mask]).sum()
+        acc = int(correct) / int(test_data.test_mask.sum())
+
+        precision = precision_score(test_data.y[test_data.test_mask], pred[test_data.test_mask], average='weighted', zero_division=0)
+
+        rmse = root_mean_squared_error(test_data.y[test_data.test_mask], pred[test_data.test_mask])
+
+        model = model.to(device)
+        test_data = test_data.to(device)
+
+        return acc, precision, rmse
