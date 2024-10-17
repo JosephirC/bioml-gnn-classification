@@ -9,7 +9,8 @@ from GNN_Base import GNN_Base
 
 
 class GCN_no_pooling(GNN_Base):
-    def __init__(self, in_features, out_features, n_neurons, lr = 0.01, wd=5e-4):
+    def __init__(self, in_features, out_features, n_neurons):
+        torch.manual_seed(0)
         super().__init__()
         self.out = out_features
         self.conv1 = GCNConv(in_features, n_neurons, add_self_loops=False)
@@ -17,8 +18,6 @@ class GCN_no_pooling(GNN_Base):
         self.fc1 = Linear(n_neurons, n_neurons)
         self.fc2 = Linear(n_neurons, out_features)
         self.pooling = MaxPool1d(kernel_size=2, stride=2)
-        self.lr = lr
-        self.wd = wd
     
     def forward(self, x, A):
         x = self.conv1(x, A)

@@ -14,10 +14,10 @@ class GNN_Base(torch.nn.Module):
     def forward(self, x, A):
         pass
 
-    def fit(self, data, epochs):
+    def fit(self, data, epochs, lr=0.01, wd=5e-4):
         torch.manual_seed(0)
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01, weight_decay=5e-4)
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=wd)
 
         best_model = copy.deepcopy(self)
         min_loss = None

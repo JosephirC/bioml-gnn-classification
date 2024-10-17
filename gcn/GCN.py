@@ -8,6 +8,7 @@ from GNN_Base import GNN_Base
 
 class GCN(GNN_Base):
     def __init__(self, in_features, out_features, n_neurons):
+        torch.manual_seed(0)
         super().__init__()
         self.conv1 = GCNConv(in_features, n_neurons, add_self_loops=False)
         self.conv2 = GCNConv(n_neurons//2, n_neurons//2, add_self_loops=False)
