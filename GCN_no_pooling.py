@@ -9,11 +9,13 @@ from torch.nn import MaxPool1d
 from torch.utils.tensorboard import SummaryWriter 
 from sklearn.metrics import precision_score
 from sklearn.metrics import root_mean_squared_error
+import copy
 
 
 class GCN_no_pooling(torch.nn.Module):
     def __init__(self, in_features, out_features, n_neurons, lr = 0.01, wd=5e-4):
-        super(GCN_no_pooling, self).__init__()
+        super().__init__()
+        self.out = out_features
         self.conv1 = GCNConv(in_features, n_neurons, add_self_loops=False)
         self.conv2 = GCNConv(n_neurons, n_neurons, add_self_loops=False)
         self.fc1 = Linear(n_neurons, n_neurons)
@@ -33,6 +35,7 @@ class GCN_no_pooling(torch.nn.Module):
         return F.relu(x)
     
     def fit(self, data, epochs):
+        torch.manual_seed(0)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self = self.to(device)
         data = data.to(device)
@@ -40,11 +43,17 @@ class GCN_no_pooling(torch.nn.Module):
         writer = SummaryWriter()
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.wd)
+        
+        best_model = copy.deepcopy(self)
+        min_loss = None
 
         for epoch in range(epochs+1):
             out = self.forward(data.x, data.edge_index)
             loss = criterion(out[data.train_mask], data.y[data.train_mask])
             loss.backward()
+            if min_loss is None or loss < min_loss:
+                min_loss = loss
+                best_model = copy.deepcopy(self)
             writer.add_scalar('Loss/train', loss, epoch)
             optimizer.step()
             optimizer.zero_grad()
@@ -52,7 +61,7 @@ class GCN_no_pooling(torch.nn.Module):
         writer.flush()
         writer.close()
 
-        return self
+        return best_model
     
     def test_model(self, test_data):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -60,6 +69,8 @@ class GCN_no_pooling(torch.nn.Module):
         test_data= test_data.cpu()
 
         pred = self.forward(test_data.x, test_data.edge_index).argmax(dim=1)
+        print(pred)
+
         correct = (pred[test_data.test_mask] == test_data.y[test_data.test_mask]).sum()
         acc = int(correct) / int(test_data.test_mask.sum())
 
@@ -71,3 +82,10 @@ class GCN_no_pooling(torch.nn.Module):
         test_data = test_data.to(device)
 
         return acc, precision, rmse
+    
+    def save(self,filepath):
+        torch.save(self.state_dict(), filepath)
+
+    def load(self,filepath):
+        self.load_state_dict(torch.load(filepath))
+        return self
