@@ -20,6 +20,9 @@ class GAT_Base(nn.Module):
             optimizer.step()
             optimizer.zero_grad()
 
+            # if epoch % 1000 == 0:
+                # print(f'Epoch {epoch}, Loss: {loss.item()}')
+
         return self.forward(data.x, data.edge_index)
     
     def test_model(self, data):
