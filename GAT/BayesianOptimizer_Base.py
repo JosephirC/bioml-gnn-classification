@@ -3,15 +3,14 @@ import torch
 from sklearn.metrics import precision_score, root_mean_squared_error
 
 class BayesianOptimizer_Base:
-    def __init__(self, data, objective_fn, nbr_trials, train_nbr_epochs):
+    def __init__(self, data, nbr_trials, train_nbr_epochs):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.data = data
-        self.objective_fn = objective_fn
         self.nbr_trials = nbr_trials
         self.train_nbr_epochs = train_nbr_epochs
 
     def create_study(self, model_class):
-        study = optuna.create_study(direction='maximize')
+        study = optuna.create_study(directions=['maximize', 'maximize', 'minimize'])
         study.optimize(lambda trial: self.objective(trial, self.data, model_class), n_trials=self.nbr_trials)
         return study
 
@@ -20,7 +19,7 @@ class BayesianOptimizer_Base:
 
     def train_and_evaluate(self, data, lr, weight_decay, model):
         loss_func = torch.nn.CrossEntropyLoss()
-        optimizer = self.objective_fn(model.parameters(), lr=lr, weight_decay=weight_decay)
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
         total_accuracy = 0
         total_precision = 0
@@ -61,11 +60,17 @@ class BayesianOptimizer_Base:
         return acc, precision, rmse
         
     def get_best_study(self, study):
-        trial = study.best_trial
-        best_accuracy = trial.value
-        best_hyperparameters = trial.params
+        best_trials = study.best_trials
 
-        print('Best Accuracy: {}'.format(best_accuracy))
-        print("Best hyperparameters: {}".format(best_hyperparameters))
+        for trial in best_trials:
+            best_accuracy = trial.values[0]
+            best_precision = trial.values[1]
+            best_rmse = trial.values[2]
+            best_hyperparameters = trial.params
 
-        return best_accuracy, best_hyperparameters
+            # print(f'Best Accuracy: {best_accuracy}')
+            # print(f'Best Precision: {best_precision}')
+            # print(f'Best RMSE: {best_rmse}')
+            # print(f'Best hyperparameters: {best_hyperparameters}')
+
+        return best_accuracy, best_precision, best_rmse, best_hyperparameters

@@ -1,8 +1,8 @@
 from BayesianOptimizer_Base import BayesianOptimizer_Base
 
 class MultiHeadGATBayesianOptimizer(BayesianOptimizer_Base):
-    def __init__(self, data, objective_fn, nbr_trials, train_nbr_epochs):
-        super().__init__(data, objective_fn, nbr_trials, train_nbr_epochs)
+    def __init__(self, data, nbr_trials, train_nbr_epochs):
+        super().__init__(data, nbr_trials, train_nbr_epochs)
 
     def objective(self, trial, data, model_class: type):
         lr = trial.suggest_float('lr', 0.001, 0.1, log=True)
@@ -13,6 +13,6 @@ class MultiHeadGATBayesianOptimizer(BayesianOptimizer_Base):
 
         model = model_class(data.x.shape[1], nb_neurons, data.num_classes, heads=nb_heads, dropout=dropout).to(self.device)
 
-        accuracy, _, _ = self.train_and_evaluate(data, lr, weight_decay, model)
+        accuracy, precision, rmse = self.train_and_evaluate(data, lr, weight_decay, model)
 
-        return accuracy
+        return accuracy, precision, rmse

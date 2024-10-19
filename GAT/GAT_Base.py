@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from sklearn.metrics import precision_score, root_mean_squared_error
+import os
 
 class GAT_Base(nn.Module):
     def __init__(self):
@@ -9,9 +10,9 @@ class GAT_Base(nn.Module):
     def forward(self, x, edge_index):
         pass
 
-    def fit(self, data, epochs, lr=0.01, wd=5e-4, optimizer_fn=torch.optim.Adam):
+    def fit(self, data, epochs, lr=0.01, wd=5e-4):
         loss_func = nn.CrossEntropyLoss()
-        optimizer = optimizer_fn(self.parameters(), lr=lr, weight_decay=wd)
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=wd)
 
         for epoch in range(epochs+1):
             optimizer.zero_grad()
@@ -39,3 +40,26 @@ class GAT_Base(nn.Module):
         rmse = root_mean_squared_error(data.y[data.test_mask].cpu(), pred[data.test_mask].cpu())
 
         return acc, precision, rmse
+
+    def save_model(self, path, best_accuracy, best_precision, best_rmse, best_hyperparameters, input_dim, output_dim):
+        hyperparameters_to_save = {
+            'nb_neurons': best_hyperparameters['nb_neurons'],
+            'dropout': best_hyperparameters['dropout'],
+            'lr': best_hyperparameters['lr'],
+            'weight_decay': best_hyperparameters['weight_decay']
+        }
+
+        torch.save({
+            'model_state_dict': self.state_dict(),
+            'best_hyperparameters': hyperparameters_to_save,
+            'input_dim': input_dim,
+            'output_dim': output_dim,
+            'best_accuracy': best_accuracy,
+            'best_precision': best_precision,
+            'best_rmse': best_rmse
+        }, path)
+
+    def load_model(self, path):
+        checkpoint = torch.load(path)
+        self.load_state_dict(checkpoint['model_state_dict'])
+        return self, checkpoint
