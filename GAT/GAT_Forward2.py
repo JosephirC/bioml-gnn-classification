@@ -22,8 +22,8 @@ class GAT_Forward2(GAT_Base):
         x = self.gat2(x, edge_index)
         return F.log_softmax(x, dim=1)
     
-    def load_model(self, path):
-        checkpoint = torch.load(path, weights_only=True)
+    def load_model(path):
+        checkpoint = torch.load(path)
         best_hyperparameters = checkpoint['best_hyperparameters']
         
         model = GAT_Forward2(

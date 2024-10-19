@@ -30,8 +30,8 @@ class GAT_Pooling(GAT_Base):
         x = x.squeeze(0)
         return F.log_softmax(x, dim=1)
     
-    def load_model(self, path):
-        checkpoint = torch.load(path, weights_only=True)
+    def load_model(path):
+        checkpoint = torch.load(path)
         best_hyperparameters = checkpoint['best_hyperparameters']
         
         model = GAT_Pooling(

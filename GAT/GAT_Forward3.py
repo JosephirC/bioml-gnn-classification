@@ -22,8 +22,8 @@ class GAT_Forward3(GAT_Base):
         x = self.gat2(x, edge_index)
         return x
     
-    def load_model(self, path):
-        checkpoint = torch.load(path, weights_only=True)
+    def load_model(path):
+        checkpoint = torch.load(path)
         best_hyperparameters = checkpoint['best_hyperparameters']
         
         model = GAT_Forward3(
