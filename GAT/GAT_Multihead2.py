@@ -48,7 +48,7 @@ class GAT_Multihead2(GAT_Base):
         }, path)
 
     def load_model(self, path):
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=True)
         best_hyperparameters = checkpoint['best_hyperparameters']
         
         model = GAT_Multihead2(

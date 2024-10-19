@@ -42,6 +42,9 @@ class GAT_Base(nn.Module):
         return acc, precision, rmse
 
     def save_model(self, path, best_accuracy, best_precision, best_rmse, best_hyperparameters, input_dim, output_dim):
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
         hyperparameters_to_save = {
             'nb_neurons': best_hyperparameters['nb_neurons'],
             'dropout': best_hyperparameters['dropout'],
@@ -60,6 +63,6 @@ class GAT_Base(nn.Module):
         }, path)
 
     def load_model(self, path):
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=True)
         self.load_state_dict(checkpoint['model_state_dict'])
         return self, checkpoint

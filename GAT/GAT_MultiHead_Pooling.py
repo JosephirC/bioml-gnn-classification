@@ -44,7 +44,7 @@ class GAT_MultiHead_Pooling(GAT_Base):
         }, path)
 
     def load_model(self, path):
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=True)
         best_hyperparameters = checkpoint['best_hyperparameters']
         
         model = GAT_MultiHead_Pooling(
