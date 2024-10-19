@@ -1,6 +1,7 @@
 from GAT_Base import GAT_Base
 import torch.nn.functional as F
 from torch_geometric.nn import GATConv
+import torch
 
 # mis forward
 
@@ -20,3 +21,18 @@ class GAT_Forward3(GAT_Base):
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = self.gat2(x, edge_index)
         return x
+    
+    def load_model(self, path):
+        checkpoint = torch.load(path)
+        best_hyperparameters = checkpoint['best_hyperparameters']
+        
+        model = GAT_Forward3(
+            checkpoint['input_dim'],
+            best_hyperparameters['nb_neurons'],
+            checkpoint['output_dim'],
+            dropout=best_hyperparameters['dropout']
+        )
+        
+        model.load_state_dict(checkpoint['model_state_dict'])
+        
+        return model, best_hyperparameters

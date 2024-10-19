@@ -2,6 +2,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GATConv
 from GAT_Base import GAT_Base
 from torch.nn import MaxPool1d
+import torch
 
 class GAT_Pooling(GAT_Base):
     def __init__(self, in_channels, hidden_channels, out_channels, heads=1, dropout=0.6):
@@ -28,3 +29,18 @@ class GAT_Pooling(GAT_Base):
         x = self.pooling(x)
         x = x.squeeze(0)
         return F.log_softmax(x, dim=1)
+    
+    def load_model(self, path):
+        checkpoint = torch.load(path)
+        best_hyperparameters = checkpoint['best_hyperparameters']
+        
+        model = GAT_Pooling(
+            checkpoint['input_dim'],
+            best_hyperparameters['nb_neurons'],
+            checkpoint['output_dim'],
+            dropout=best_hyperparameters['dropout']
+        )
+        
+        model.load_state_dict(checkpoint['model_state_dict'])
+        
+        return model, best_hyperparameters
