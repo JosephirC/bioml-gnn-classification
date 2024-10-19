@@ -9,19 +9,16 @@ class GAT_Base(nn.Module):
     def forward(self, x, edge_index):
         pass
 
-    def fit(self, data, epochs, lr=0.01, wd=5e-4):
+    def fit(self, data, epochs, lr=0.01, wd=5e-4, optimizer_fn=torch.optim.Adam):
         loss_func = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=wd)
+        optimizer = optimizer_fn(self.parameters(), lr=lr, weight_decay=wd)
 
         for epoch in range(epochs+1):
+            optimizer.zero_grad()
             out = self.forward(data.x, data.edge_index)
             loss = loss_func(out[data.train_mask], data.y[data.train_mask])
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
-
-            # if epoch % 1000 == 0:
-                # print(f'Epoch {epoch}, Loss: {loss.item()}')
 
         return self.forward(data.x, data.edge_index)
     
