@@ -3,6 +3,7 @@ import copy
 from torch.utils.tensorboard import SummaryWriter 
 from sklearn.metrics import precision_score
 from sklearn.metrics import root_mean_squared_error
+from EarlyStopping import EarlyStopping
 
 class GNN_Base(torch.nn.Module):
     """
@@ -16,11 +17,9 @@ class GNN_Base(torch.nn.Module):
 
     def fit(self, data, epochs, lr=0.01, wd=5e-4):
         torch.manual_seed(0)
+        es = EarlyStopping(patience=1000)
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=wd)
-
-        best_model = copy.deepcopy(self)
-        min_loss = None
 
         writer = SummaryWriter()
 
@@ -28,16 +27,19 @@ class GNN_Base(torch.nn.Module):
             out = self.forward(data.x, data.edge_index)
             loss = criterion(out[data.train_mask], data.y[data.train_mask])
             loss.backward()
-            if min_loss is None or loss < min_loss:
-                min_loss = loss
-                best_model = copy.deepcopy(self)
             writer.add_scalar('Loss/train', loss, epoch)
+            # acc, precision, rmse = self.validate_model(data)
+            # writer.add_scalar('Validation Accuracy/train', acc, epoch)
             optimizer.step()
             optimizer.zero_grad()
+
+            if es.early_stop(criterion(out[data.val_mask], data.y[data.val_mask]), self):
+                return es.get_best_model()
+            
         writer.flush()
         writer.close()
 
-        return best_model
+        return self
     
     def save(self,filepath):
         torch.save(self.state_dict(), filepath)
@@ -53,7 +55,11 @@ class GNN_Base(torch.nn.Module):
         data= data.cpu()
 
         pred = self.forward(data.x, data.edge_index).argmax(dim=1)
-        print(pred)
+
+
+        print("pred : " , pred[data.val_mask].shape)
+        print("data.y : " , data.y[data.val_mask].shape)
+
 
         correct = (pred[data.val_mask] == data.y[data.val_mask]).sum()
         acc = int(correct) / int(data.val_mask.sum())
@@ -73,7 +79,6 @@ class GNN_Base(torch.nn.Module):
         data= data.cpu()
 
         pred = self.forward(data.x, data.edge_index).argmax(dim=1)
-        print(pred)
 
         correct = (pred[data.test_mask] == data.y[data.test_mask]).sum()
         acc = int(correct) / int(data.test_mask.sum())

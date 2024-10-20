@@ -27,5 +27,5 @@ class GCNBayesianOptimizer:
         gcn = model_type(data.x.shape[1], data.num_classes,nb_neuron)
         gcn = gcn.to(device)
         data = data
-        gcn = gcn.fit(data, 2000, lr, wd)
+        gcn = gcn.fit(data, 10000, lr, wd)
         return gcn.test_model(data)[0]
